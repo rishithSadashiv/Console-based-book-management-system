@@ -1,0 +1,74 @@
+package in.ac.sit.cs.bms;
+
+public class Book {
+	
+	private String title;
+	private int ISBN;
+	private String catagory;
+	private int numberOfBooks;
+	
+	private Author author;
+
+
+	
+	public Book(String title, int iSBN, String catagory, int numberOfBooks, Author author) {
+		super();
+		this.title = title;
+		ISBN = iSBN;
+		this.catagory = catagory;
+		this.numberOfBooks = numberOfBooks;
+		this.author = author;
+	}
+
+	
+	public int getNumberOfBooks() {
+		return numberOfBooks;
+	}
+
+	public void setNumberOfBooks(int numberOfBooks) {
+		this.numberOfBooks = numberOfBooks;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public int getISBN() {
+		return ISBN;
+	}
+
+	public void setISBN(int iSBN) {
+		ISBN = iSBN;
+	}
+
+	public String getCatagory() {
+		return catagory;
+	}
+
+	public void setCatagory(String catagory) {
+		this.catagory = catagory;
+	}
+
+	public Author getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(Author author) {
+		this.author = author;
+	}
+
+	@Override
+	public String toString() {
+		return "->Book[title=" + title + ", ISBN=" + ISBN + ", catagory=" + catagory + ", numberOfBooks=" + numberOfBooks
+				+ ", " + author.toString() + "]";
+	}
+
+	
+	
+	
+
+}

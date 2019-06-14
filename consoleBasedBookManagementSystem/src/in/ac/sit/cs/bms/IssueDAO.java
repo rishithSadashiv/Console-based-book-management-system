@@ -1,0 +1,183 @@
+package in.ac.sit.cs.bms;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+public class IssueDAO {
+	
+	public boolean booksToBeReturned(Date date)
+	{
+		String sql = "select s.studentName,s.studentUSN,b.bookISBN,b.bookTitle,a.authorName from book b,issue i,student s,author a where b.bookISBN = i.bookISBN and s.studentUSN = i.studentUSN and a.bookISBN=b.bookISBN and i.returnDate=?";
+		boolean flag = false;
+		
+		java.sql.Date rDate = new java.sql.Date(date.getTime());
+		//System.out.println("util date: "+date);
+		//System.out.println("sql date: "+rDate);
+		
+		try(Connection conn = DBConnectionManager.getConnection())
+		{
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setDate(1, rDate);
+			
+			ResultSet rs = ps.executeQuery();
+			while(rs != null && rs.next())
+			{
+				System.out.println("Student name : "+rs.getString(1)+"\tUSN : "+rs.getString(2)+"\tBook ISBN : "+rs.getInt(3)+"\tTitle : "+rs.getString(4)+"\tAuthor name : "+rs.getString(5));
+				flag = true;
+			}
+			
+						
+		}catch(SQLException e)
+		{
+			e.printStackTrace();
+		}
+		if(flag == false)
+		{
+			System.out.println("There are no books to be returned on this day");
+		}
+		
+		return true;
+	}
+	
+	
+	public boolean listStudentBooks(String USN)
+	{
+		String sql = "select b.bookTitle,s.studentName,i.returnDate from book b, issue i, student s where b.bookISBN = i.bookISBN and s.studentUSN = i.studentUSN and s.studentUSN = ?";
+		int rows = 0;
+		
+		try(Connection conn = DBConnectionManager.getConnection()){
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setString(1, USN);
+			ResultSet rs = ps.executeQuery();
+			while(rs !=null && rs.next())
+			{
+				System.out.println("Book Title :"+ rs.getString(1) +"\tStudent Name : "+ rs.getString(2) +"\tReturn Date : "+ rs.getDate(3));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return rows>0;
+	}
+	
+	public boolean issueBook(Student student, Date issueDate, int ISBN ) {
+		String sql0 = "select studentUSN from Student where studentUSN = ?";
+		String sql1 = "insert into student values(?,?)";
+		String sql2 = "insert into Issue values(default,?,?,?,?)";//adding default is very important. Otherwise SQLException will occur with error message "Column count doesn't match value count at row 1"
+		String sql3 = "update Book set noOfBooks=noOfBooks-? where bookISBN=?";
+		
+		int rows1 = 0,rows2 = 0,rows3 = 0;
+		final int oneBook = 1;
+		String USN = null;
+		
+		Calendar c = Calendar.getInstance();//adding 7 days
+		c.setTime(issueDate);
+		c.add(Calendar.DATE, 7);
+		Date returnDate = c.getTime();
+		java.sql.Date rDate = new java.sql.Date(returnDate.getTime());//another way of converting Date type from java.util.Date to java.sql.Date
+		java.sql.Date iDate = new java.sql.Date(issueDate.getTime());
+		
+		try(Connection conn = DBConnectionManager.getConnection())
+		{
+			PreparedStatement ps3 = conn.prepareStatement(sql3);
+			ps3.setInt(1, oneBook);
+			ps3.setInt(2, ISBN);
+			rows3 = ps3.executeUpdate();
+			
+			PreparedStatement ps0 = conn.prepareStatement(sql0);
+			ps0.setString(1, student.getUSN());
+			ResultSet rs = ps0.executeQuery();
+			if(rs !=null && rs.next())
+			{
+				USN = rs.getString(1);
+			}
+			if(USN !=null && USN.equals(student.getUSN()))
+			{
+				PreparedStatement ps2 = conn.prepareStatement(sql2);
+				ps2.setString(1, student.getUSN());
+				ps2.setDate(2, iDate);
+				ps2.setDate(3, rDate);
+				ps2.setInt(4, ISBN);
+				rows2 = ps2.executeUpdate();
+				
+				return (rows2>0 && rows3>0);
+			}
+			else
+			{			
+				PreparedStatement ps1 = conn.prepareStatement(sql1);
+				ps1.setString(1, student.getUSN());
+				ps1.setString(2, student.getName());
+				rows1 = ps1.executeUpdate();
+			
+				PreparedStatement ps2 = conn.prepareStatement(sql2);
+				ps2.setString(1, student.getUSN());
+				ps2.setDate(2,  iDate);// converting Date type from java.util.Date to java.sql.Date cannot be done this way --> (java.sql.Date) issueDate
+				ps2.setDate(3, rDate);
+				ps2.setInt(4, ISBN);
+				rows2 = ps2.executeUpdate();				
+			}	
+		}catch(SQLException e)
+		{
+			e.printStackTrace();
+		}
+		
+		
+		return (rows1>0 && rows2>0 && rows3>0);
+		
+	}
+	
+	public int bookAvailability(int ISBN) {
+		String sql = "select noOfBooks from book where bookISBN=?";
+		int number=0;
+		
+		try(Connection conn = DBConnectionManager.getConnection()){
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setInt(1, ISBN);
+			ResultSet rs = ps.executeQuery();
+			if(rs != null && rs.next())
+			{
+				number = rs.getInt(1);
+			}
+			
+		}catch(SQLException e) {
+			e.printStackTrace();
+		}
+		if(number>0)
+		{
+			return 1;
+		}else
+		{
+			return number;//return 0
+		}
+	}
+	
+	public List<Book> displayAllRecordedBooks()
+	{
+		Author temp0;
+		Book temp;
+		List<Book> bookList = new ArrayList<>();
+		String sql = "select b.bookTitle,b.bookISBN,b.bookCatagory,b.noOfBooks,a.authorName,a.authorMailId from book b, author a where b.bookISBN = a.bookISBN ";
+		try (Connection conn = DBConnectionManager.getConnection()){
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
+			while (rs != null && rs.next()) {
+				temp0 = new Author(rs.getString(5), rs.getString(6));
+				temp = new Book(rs.getString(1), rs.getInt(2),rs.getString(3),rs.getInt(4),temp0);
+				bookList.add(temp);
+			}
+		}catch (SQLException e) {
+			e.printStackTrace();
+		}
+		if(bookList.isEmpty()){
+			System.out.println("No books found");
+		}
+		return bookList;
+	}
+
+}

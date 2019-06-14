@@ -1,0 +1,102 @@
+package in.ac.sit.cs.bms;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BookDAO {
+	
+	public boolean addBook(Book book)
+	{
+		String sql0 = "select bookISBN from book where bookISBN = ?";
+		String sql1 = "insert into book values(?,?,?,?)";
+		String sql2 = "insert into author values(?,?,?)";
+		String sql3 = "update book set noOfBooks=noOfBooks+? where bookISBN=?";
+		
+		int rows1 = 0,rows2=0,rows3=0,rows0 = 0;
+		int isbn=0;
+		try(Connection conn = DBConnectionManager.getConnection())
+		{
+			PreparedStatement ps0 = conn.prepareStatement(sql0);
+			ps0.setInt(1, book.getISBN());
+			ResultSet rs = ps0.executeQuery();
+			if(rs != null && rs.next())
+			{
+				isbn = rs.getInt(1);
+			}
+			if(book.getISBN() == isbn)
+			{
+				PreparedStatement ps3 = conn.prepareStatement(sql3);
+				ps3.setInt(1, book.getNumberOfBooks());
+				ps3.setInt(2, book.getISBN());
+				rows0 = ps3.executeUpdate();
+				return rows0>0;
+			}
+			else
+			{
+				PreparedStatement ps1 = conn.prepareStatement(sql1);//adding book ISBN, title, category, noOfBooks
+				ps1.setInt(1, book.getISBN());
+				ps1.setString(2, book.getTitle());
+				ps1.setString(3, book.getCatagory());
+				ps1.setInt(4, book.getNumberOfBooks());
+				rows1 = ps1.executeUpdate();
+			
+				PreparedStatement ps2 = conn.prepareStatement(sql2);
+				ps2.setString(1, book.getAuthor().getAuthorName());
+				ps2.setString(2, book.getAuthor().getPhoneNumber());
+				ps2.setInt(3, book.getISBN());
+				rows2 = ps2.executeUpdate();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return (rows1>0 && rows2>0 && rows3>0);
+	}
+
+	public List<Book> searchUsingTitle(String title,int decision) {
+		String sql=null;
+		int zeroNumber = 0;
+		if(decision == 1) {
+			sql = "select b.bookTitle,b.bookISBN,b.bookCatagory,b.noOfBooks,a.authorName,a.authorMailId from book b, author a where b.bookISBN = a.bookISBN and b.bookTitle RLIKE(?) and b.noOfBooks!=0";
+		}
+		else if(decision == 2){
+			sql = "select b.bookTitle,b.bookISBN,b.bookCatagory,b.noOfBooks,a.authorName,a.authorMailId from book b, author a where b.bookISBN = a.bookISBN and b.bookCatagory RLIKE(?) and b.noOfBooks!=0";
+		}
+		else if(decision == 3){
+			sql = "select b.bookTitle,b.bookISBN,b.bookCatagory,b.noOfBooks,a.authorName,a.authorMailId from book b, author a where b.bookISBN = a.bookISBN and a.authorName RLIKE(?) and b.noOfBooks!=0";
+		}
+		else if(decision == 4){
+			sql = "select b.bookTitle,b.bookISBN,b.bookCatagory,b.noOfBooks,a.authorName,a.authorMailId from book b, author a where b.bookISBN = a.bookISBN and b.noOfBooks!=? ";
+		}
+		List<Book> bookList = new ArrayList<>();
+		Book temp = null;
+		Author temp0 = null;
+		
+		try (Connection conn = DBConnectionManager.getConnection()){
+			PreparedStatement ps = conn.prepareStatement(sql);
+			if(decision != 4) {
+				ps.setString(1, title);
+			}else {
+				ps.setInt(1, zeroNumber);//removes the rows which have 0 number of books
+			}
+			ResultSet rs = ps.executeQuery();
+			while (rs != null && rs.next()) {
+				temp0 = new Author(rs.getString(5), rs.getString(6));
+				temp = new Book(rs.getString(1), rs.getInt(2),rs.getString(3),rs.getInt(4),temp0);
+				bookList.add(temp);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		if(bookList.isEmpty()){
+			System.out.println("No books found");
+		}
+		return bookList;		
+	}
+
+}

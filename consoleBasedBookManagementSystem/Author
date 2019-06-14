@@ -1,0 +1,31 @@
+package in.ac.sit.cs.bms;
+
+public class Author {
+	
+	private String authorName;
+	private String phoneNumber;
+	public Author(String authorName, String phoneNumber) {
+		super();
+		this.authorName = authorName;
+		this.phoneNumber = phoneNumber;
+	}
+	public String getAuthorName() {
+		return authorName;
+	}
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+	public String getPhoneNumber() {
+		return phoneNumber;
+	}
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
+	}
+	@Override
+	public String toString() {
+		return "Author [authorName=" + authorName + ", Contact detail =" + phoneNumber + "]";
+	}
+	
+	
+
+}

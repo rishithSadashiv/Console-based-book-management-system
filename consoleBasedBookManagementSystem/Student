@@ -1,0 +1,38 @@
+package in.ac.sit.cs.bms;
+
+public class Student {
+	
+	private String name;
+	private String USN;
+	
+	public Student(String name, String uSN) {
+		super();
+		this.name = name;
+		USN = uSN;
+		 
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getUSN() {
+		return USN;
+	}
+
+	public void setUSN(String uSN) {
+		USN = uSN;
+	}
+
+	@Override
+	public String toString() {//do not use it ,exception may occur because it is trying to print the booksIssued object instead of each element at a time.
+		return "Student [name=" + name + ", USN=" + USN +  "]";
+	}
+	
+	
+
+}
